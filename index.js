@@ -13,9 +13,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
-const uri =
-  `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.lc40fqb.mongodb.net/?retryWrites=true&w=majority`;
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.lc40fqb.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -33,18 +32,39 @@ async function run() {
     const bookingsCollection = client.db("aircncDb").collection("bookings");
 
     // save user email and role in DB
-    app.put("/users/:email", async(req, res)=>{
-        const email = req.params.email
-        const user = req.body
-        const query = {email : email}
-        const options = {upsert : true}
-        const updateDoc = {
-            $set : user
-        }
-        const result = await usersCollection.updateOne(query, updateDoc, options)
-        res.send(result)
+    app.put("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+      console.log(user);
+      const query = { email: email };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: user,
+      };
+      const result = await usersCollection.updateOne(query, updateDoc, options);
+      res.send(result);
+    });
+    
+
+    app.post("/rooms", async (req, res) => {
+      const room = req.body;
+      const result = await roomsCollection.insertOne(room);
+      res.send(result);
+    });
+
+    // get room data
+    app.get("/rooms", async(req, res)=>{
+      const result = await roomsCollection.find().toArray()
+      res.send(result)
     })
 
+    // get a single room
+    app.get("/room/:id", async(req, res)=>{
+      const id = req.params.id
+      const query = {_id : new ObjectId(id)}
+      const result = await roomsCollection.findOne(query)
+      res.send(result)
+    })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
